@@ -23,10 +23,16 @@ python -m venv .venv
 <<<<<<< HEAD
 # Install dependencies
 =======
-# 3. Run
+# 3 Create and Add your API Key
+Create and Add your API Key in an .env file 
+Example
+GITHUB_TOKEN=""
+MODEL_1=openai/gpt-5
+
+#4 Run
 uvicorn src.main:app --reload
 
-# 4. Open browser
+# 5. Open browser
 # http://localhost:8000/
 ```
 
