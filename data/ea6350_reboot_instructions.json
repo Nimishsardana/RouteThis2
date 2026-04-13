@@ -1,0 +1,84 @@
+{
+  "router_model": "Linksys EA6350",
+  "manual_source": "https://downloads.linksys.com/support/assets/userguide/EA6350_UG_INTL_update.pdf",
+  "reboot_methods": [
+    {
+      "method_id": "soft_reboot",
+      "title": "Reboot via Power Cord",
+      "description": "Restart the router by disconnecting and reconnecting the power cord (recommended first step)",
+      "steps": [
+        "Disconnect the power cord from the router and the modem.",
+        "Wait 10 seconds and reconnect the power cord to the modem. Make sure it has power.",
+        "Wait until the modem's online indicator has stopped blinking (about two minutes). Reconnect the power cord to the router.",
+        "Wait until the power indicator stops blinking. Wait two minutes before trying to connect to the internet from a computer."
+      ]
+    },
+    {
+      "method_id": "web_ui_reboot",
+      "title": "Reboot via Linksys Smart Wi-Fi",
+      "description": "Restart the router through the Linksys Smart Wi-Fi admin interface",
+      "steps": [
+        "Log in to Linksys Smart Wi-Fi. (Open a browser and go to http://192.168.1.1 or linksyssmartwifi.com and sign in.)",
+        "Under Router Settings, click Troubleshooting.",
+        "Click the Diagnostics tab.",
+        "Under Reboot, click Reboot.",
+        "Click Yes. The router will reboot. While the router is rebooting, all connected devices will lose their internet connection, and will automatically reconnect when the router is ready again."
+      ],
+      "admin_url": "http://192.168.1.1",
+      "alternate_url": "linksyssmartwifi.com"
+    },
+    {
+      "method_id": "factory_reset",
+      "title": "Factory Reset (Last Resort)",
+      "description": "Restore the router to factory default settings — use only when all else fails",
+      "warning": "This will erase all custom settings including your Wi-Fi name, password, and any custom configurations. You will need to set up the router again from scratch.",
+      "caution": "Only use factory reset if power cord reboot and Smart Wi-Fi reboot have not resolved the issue.",
+      "steps": [
+        "Make sure the router is powered on.",
+        "Locate the Reset button on the back panel of the router.",
+        "Press and hold the Reset button with a paperclip or pin until the power LED starts flashing (about 10 seconds).",
+        "Release the Reset button and wait for the router to finish resetting. The router will reboot automatically.",
+        "Once the router has restarted, it will broadcast the default Wi-Fi network name and password printed on the label on the bottom of the router.",
+        "Reconnect your devices using the default Wi-Fi credentials from the router label.",
+        "Install the router again by opening a web browser and following the on-screen setup instructions."
+      ]
+    }
+  ],
+  "router_lights": {
+    "power": {
+      "stays_on_steadily": "Power is connected and router is operating normally (also indicates successful Wi-Fi Protected Setup connection)",
+      "flashes_slowly": "Router is booting up, a firmware upgrade is in progress, or a Wi-Fi Protected Setup connection is being made",
+      "flashes_quickly": "Wi-Fi Protected Setup error has occurred"
+    }
+  },
+  "hardware": {
+    "reset_button": "Press and hold until the power LED starts flashing to reset the router to factory settings. You can also restore the factory settings using Linksys Smart Wi-Fi.",
+    "power_switch": "Press | (on) to turn on the router.",
+    "internet_port": "Yellow gigabit port — connect to your broadband cable/DSL/fiber modem.",
+    "ethernet_ports": "Blue gigabit ports — connect to wired devices on your network."
+  },
+  "support": {
+    "url": "Linksys.com/support/EA6350",
+    "description": "Award-winning customer support, documentation, downloads, FAQs, technical support, live chat, and forums"
+  },
+  "when_to_reboot": [
+    "The internet appears to be unavailable (browser shows 'Cannot find [internet address]')",
+    "Router is unresponsive or devices cannot connect to the internet",
+    "Internet connection is slow or intermittent across multiple devices",
+    "Network cables and power are confirmed connected but internet still not working",
+    "Router has been running for an extended period without restart"
+  ],
+  "when_not_to_reboot": [
+    "Issue is specific to one website (likely a server-side issue — check your ISP for outages)",
+    "Issue is on only one device (likely device-specific — check that device's Wi-Fi settings)",
+    "Firmware update is in progress (power light flashing slowly — wait for it to complete)",
+    "ISP has confirmed a service outage in your area (rebooting will not restore their service)",
+    "Router was not successfully set up initially (follow setup instructions instead)"
+  ],
+  "internet_unavailable_checklist": [
+    "Make sure that the network and power cables are securely connected.",
+    "Make sure that the power outlet that your router is connected to has power.",
+    "Reboot your router.",
+    "Contact your ISP and ask about outages in your area."
+  ]
+}

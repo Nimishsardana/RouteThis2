@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WiFi Troubleshooter — Linksys EA6350</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0d0f14;
+  --surf:      #14171f;
+  --surf2:     #1c2030;
+  --bdr:       #252a38;
+  --bdr2:      #323848;
+  --teal:      #2dd4bf;
+  --teal-d:    rgba(45,212,191,.12);
+  --teal-hi:   #5eead4;
+  --blue:      #60a5fa;
+  --blue-d:    rgba(96,165,250,.12);
+  --amber:     #fbbf24;
+  --amber-d:   rgba(251,191,36,.1);
+  --green:     #4ade80;
+  --green-d:   rgba(74,222,128,.1);
+  --red:       #f87171;
+  --red-d:     rgba(248,113,113,.1);
+  --text:      #e2e8f2;
+  --text2:     #8b95a8;
+  --text3:     #4e5768;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --r: 10px;
+}
+
+html, body { height: 100%; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ─ SETUP SCREEN ─────────────────────────────────── */
+#setup {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; padding: 20px;
+}
+.setup-card {
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  border-radius: 14px;
+  padding: 30px 28px;
+  width: 100%; max-width: 400px;
+}
+.setup-card h2 {
+  font-size: 15px; font-weight: 600;
+  margin-bottom: 5px;
+}
+.setup-card .sub {
+  font-size: 12.5px; color: var(--text2); line-height: 1.6; margin-bottom: 20px;
+}
+.setup-card input {
+  width: 100%; background: var(--bg);
+  border: 1px solid var(--bdr); border-radius: 8px;
+  padding: 11px 13px; color: var(--text);
+  font-family: var(--mono); font-size: 12px;
+  outline: none; margin-bottom: 10px;
+  transition: border-color .2s;
+}
+.setup-card input:focus { border-color: var(--teal); }
+.setup-card input::placeholder { color: var(--text3); }
+.setup-card .go-btn {
+  width: 100%; padding: 11px;
+  background: var(--teal); border: none; border-radius: 8px;
+  color: #0d0f14; font-family: var(--sans); font-size: 13.5px; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+.setup-card .go-btn:hover { background: var(--teal-hi); }
+.setup-note { font-size: 11px; color: var(--text3); margin-top: 10px; text-align: center; }
+.setup-logo {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--teal-d); border: 1px solid rgba(45,212,191,.3);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 18px;
+}
+.setup-logo svg { width: 22px; height: 22px; stroke: var(--teal); }
+
+/* ─ HEADER ───────────────────────────────────────── */
+.hdr {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 20px;
+  background: var(--surf);
+  border-bottom: 1px solid var(--bdr);
+  flex-shrink: 0;
+}
+.hdr-logo {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: var(--teal-d); border: 1px solid rgba(45,212,191,.25);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.hdr-logo svg { width: 18px; height: 18px; stroke: var(--teal); }
+.hdr-text h1 { font-size: 13.5px; font-weight: 600; line-height: 1.2; }
+.hdr-text p  { font-size: 11px; color: var(--text2); font-family: var(--mono); margin-top: 1px; }
+.hdr-right { margin-left: auto; display: flex; align-items: center; gap: 9px; }
+.pill {
+  font-family: var(--mono); font-size: 10px;
+  padding: 3px 9px; border-radius: 20px;
+  border: 1px solid var(--bdr); color: var(--text3);
+  transition: all .3s; white-space: nowrap;
+}
+.pill.active { border-color: rgba(45,212,191,.5); color: var(--teal); background: var(--teal-d); }
+.pill.done   { border-color: rgba(74,222,128,.4);  color: var(--green); background: var(--green-d); }
+.pill.err    { border-color: rgba(248,113,113,.4); color: var(--red);   background: var(--red-d); }
+.new-btn {
+  height: 34px; padding: 0 13px;
+  background: transparent; border: 1px solid var(--bdr); border-radius: 8px;
+  color: var(--text2); font-family: var(--sans); font-size: 12px;
+  cursor: pointer; transition: border-color .15s, color .15s; white-space: nowrap;
+}
+.new-btn:hover { border-color: var(--teal); color: var(--teal); }
+
+/* ─ STATE STEPS ──────────────────────────────────── */
+.states {
+  display: flex; align-items: stretch;
+  background: var(--surf); border-bottom: 1px solid var(--bdr);
+  flex-shrink: 0; overflow-x: auto; scrollbar-width: none;
+}
+.states::-webkit-scrollbar { display: none; }
+.s-step {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px 8px 12px;
+  font-size: 11px; font-family: var(--mono);
+  color: var(--text3); white-space: nowrap;
+  position: relative;
+  border-right: 1px solid var(--bdr);
+  transition: color .25s;
+}
+.s-step:last-of-type { border-right: none; }
+.s-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--bdr2); flex-shrink: 0;
+  transition: background .25s, box-shadow .25s;
+}
+.s-step.active { color: var(--teal); }
+.s-step.active .s-dot { background: var(--teal); box-shadow: 0 0 5px var(--teal); }
+.s-step.done   { color: var(--text3); }
+.s-step.done   .s-dot { background: var(--text3); }
+.turn-info {
+  margin-left: auto; padding: 0 14px;
+  font-size: 10.5px; font-family: var(--mono); color: var(--text3);
+  display: flex; align-items: center; flex-shrink: 0;
+}
+
+/* ─ MESSAGES ─────────────────────────────────────── */
+.msgs {
+  flex: 1; overflow-y: auto;
+  padding: 22px 20px; display: flex; flex-direction: column; gap: 16px;
+  scroll-behavior: smooth;
+}
+.msgs::-webkit-scrollbar { width: 3px; }
+.msgs::-webkit-scrollbar-thumb { background: var(--bdr2); border-radius: 2px; }
+
+.msg { display: flex; gap: 10px; animation: mi .2s cubic-bezier(.2,.8,.4,1); }
+@keyframes mi {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg.bot  { align-self: flex-start; max-width: min(660px, 100%); }
+.msg.user { flex-direction: row-reverse; align-self: flex-end; max-width: min(560px, 100%); }
+
+.av {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+.bot  .av { background: var(--teal-d); border: 1px solid rgba(45,212,191,.2); }
+.user .av { background: var(--blue-d); border: 1px solid rgba(96,165,250,.2); }
+.av svg { width: 14px; height: 14px; fill: none; stroke-width: 1.8; stroke-linecap: round; }
+.bot  .av svg { stroke: var(--teal); }
+.user .av svg { stroke: var(--blue); }
+
+.bub {
+  padding: 10px 14px; border-radius: var(--r);
+  font-size: 13.5px; line-height: 1.65;
+  white-space: pre-wrap; word-break: break-word;
+}
+.bot  .bub { background: var(--surf2); border: 1px solid var(--bdr); border-top-left-radius: 3px; }
+.user .bub { background: var(--blue-d); border: 1px solid rgba(96,165,250,.18); border-top-right-radius: 3px; color: #c7dffe; }
+
+.step-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--mono); font-size: 10px;
+  padding: 2px 8px; border-radius: 20px;
+  background: var(--blue-d); border: 1px solid rgba(96,165,250,.2);
+  color: var(--blue); margin-bottom: 8px; margin-top: 2px;
+}
+
+.banner {
+  padding: 9px 13px; border-radius: var(--r);
+  font-size: 12.5px; line-height: 1.5;
+  border-left: 2.5px solid; margin: 2px 0 2px 38px;
+}
+.banner.info    { background: var(--blue-d);  border-color: var(--blue);  color: #93c5fd; }
+.banner.warn    { background: var(--amber-d); border-color: var(--amber); color: #fcd34d; }
+.banner.success { background: var(--green-d); border-color: var(--green); color: #86efac; }
+.banner.fail    { background: var(--red-d);   border-color: var(--red);   color: #fca5a5; }
+
+.typing-bub { display: flex; gap: 4px; align-items: center; padding: 12px 14px; }
+.t-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--teal);
+  animation: td 1.1s ease-in-out infinite;
+}
+.t-dot:nth-child(2) { animation-delay: .18s; }
+.t-dot:nth-child(3) { animation-delay: .36s; }
+@keyframes td {
+  0%,60%,100% { transform: translateY(0); opacity: .3; }
+  30%          { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ─ INPUT ────────────────────────────────────────── */
+.inp-area {
+  padding: 13px 20px; background: var(--surf);
+  border-top: 1px solid var(--bdr);
+  display: flex; gap: 9px; align-items: flex-end; flex-shrink: 0;
+}
+textarea#msg {
+  flex: 1; background: var(--bg);
+  border: 1px solid var(--bdr); border-radius: var(--r);
+  padding: 11px 13px; color: var(--text);
+  font-family: var(--sans); font-size: 13.5px; line-height: 1.5;
+  resize: none; min-height: 44px; max-height: 120px;
+  outline: none; display: block; transition: border-color .2s;
+}
+textarea#msg:focus   { border-color: var(--teal); }
+textarea#msg::placeholder { color: var(--text3); }
+textarea#msg:disabled { opacity: .4; cursor: not-allowed; }
+.send-btn {
+  width: 44px; height: 44px;
+  background: var(--teal); border: none; border-radius: var(--r);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .15s, transform .1s, opacity .2s;
+}
+.send-btn svg { width: 17px; height: 17px; stroke: #0d0f14; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.send-btn:hover:not(:disabled) { background: var(--teal-hi); }
+.send-btn:active:not(:disabled) { transform: scale(.93); }
+.send-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+/* ─ TOAST ────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 75px; right: 18px;
+  padding: 9px 14px; border-radius: 8px; font-size: 12.5px;
+  background: var(--surf2); border: 1px solid var(--bdr2); color: var(--text);
+  opacity: 0; transform: translateY(7px);
+  transition: all .25s; z-index: 200; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.err  { border-color: rgba(248,113,113,.5); color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- Setup overlay -->
+<div id="setup">
+  <div class="setup-card">
+    <div class="setup-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round">
+        <path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+      </svg>
+    </div>
+    <h2>WiFi Troubleshooter</h2>
+    <p class="sub">AI-powered WiFi troubleshooting for your Linksys EA6350 router. Powered by GitHub Models and the official router manual — no configuration needed.</p>
+    <button class="go-btn" onclick="startSession()">Start troubleshooting</button>
+    <p class="setup-note">Connected to backend · Using GitHub Models</p>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round">
+      <path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+    </svg>
+  </div>
+  <div class="hdr-text">
+    <h1>WiFi Troubleshooter</h1>
+    <p>Linksys EA6350 · GitHub Models</p>
+  </div>
+  <div class="hdr-right">
+    <span class="pill" id="pill">Offline</span>
+    <button class="new-btn" onclick="newSession()">↺ New session</button>
+  </div>
+</div>
+
+<!-- State steps -->
+<div class="states">
+  <div class="s-step" data-s="DIAGNOSIS">   <div class="s-dot"></div>Diagnosis</div>
+  <div class="s-step" data-s="REBOOT_GUIDE"><div class="s-dot"></div>Reboot guide</div>
+  <div class="s-step" data-s="POST_CHECK">  <div class="s-dot"></div>Post-check</div>
+  <div class="s-step" data-s="EXIT">        <div class="s-dot"></div>Done</div>
+  <div class="turn-info" id="turn-info">Turn 0</div>
+</div>
+
+<!-- Messages -->
+<div class="msgs" id="msgs"></div>
+
+<!-- Input -->
+<div class="inp-area">
+  <textarea id="msg" placeholder="Describe your WiFi issue…" rows="1" disabled></textarea>
+  <button class="send-btn" id="send-btn" disabled onclick="send()">
+    <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Determine API base URL intelligently
+// - If served from HTTP (normal), use server origin
+// - If opened as file:// (development error), redirect to localhost
+let API_BASE = window.location.origin;
+
+// Security: if opened as file://, redirect to server
+if (window.location.protocol === 'file:') {
+  console.warn('⚠️ HTML opened from file system. Redirecting to http://127.0.0.1:8000/');
+  window.location.href = 'http://127.0.0.1:8000/';
+}
+
+let SESSION_ID = null;
+let API_KEY = null;
+
+/* ── Manual data extracted from official Linksys EA6350 PDF ──────────────── */
+const MANUAL = {
+  soft_reboot: {
+    title: 'Reboot via power cord',
+    steps: [
+      'Disconnect the power cord from the router and the modem.',
+      'Wait 10 seconds and reconnect the power cord to the modem. Make sure it has power.',
+      "Wait until the modem's online indicator has stopped blinking (about two minutes). Reconnect the power cord to the router.",
+      'Wait until the power indicator stops blinking. Wait two minutes before trying to connect to the internet from a computer.'
+    ]
+  },
+  web_ui_reboot: {
+    title: 'Reboot via Linksys Smart Wi-Fi',
+    steps: [
+      'Log in to Linksys Smart Wi-Fi — open a browser and go to http://192.168.1.1 or linksyssmartwifi.com and sign in.',
+      'Under Router Settings, click Troubleshooting.',
+      'Click the Diagnostics tab.',
+      'Under Reboot, click Reboot.',
+      'Click Yes. The router will reboot. While rebooting, all connected devices will lose their internet connection and will automatically reconnect when the router is ready.'
+    ]
+  },
+  factory_reset: {
+    title: 'Factory reset (last resort)',
+    warning: 'This erases all custom settings including your Wi-Fi name and password.',
+    steps: [
+      'Make sure the router is powered on.',
+      'Locate the Reset button on the back panel of the router.',
+      'Press and hold the Reset button with a paperclip or pin until the power LED starts flashing (about 10 seconds).',
+      'Release the Reset button and wait for the router to finish resetting and reboot automatically.',
+      'Once restarted, it broadcasts the default Wi-Fi name and password printed on the label on the bottom of the router.',
+      'Reconnect your devices using the default credentials from the router label.',
+      'Open a web browser to complete the router setup again.'
+    ]
+  }
+};
+
+/* ── Session state ───────────────────────────────────────────────────────── */
+let state = 'DIAGNOSIS';
+let rebootMethod = null;
+let rebootStep = 0;
+let turns = 0;
+let diagTurns = 0;
+let history = [];
+const MAX_DIAG = 6;
+
+/* ── System prompts ──────────────────────────────────────────────────────── */
+const SYS_DIAG = `You are a helpful WiFi troubleshooting assistant for a Linksys EA6350 router. Ask one concise diagnostic question at a time.
+
+Establish: all devices or one? Router light state? How long? Anything changed recently?
+
+Router lights (from the official manual):
+- Power steady: operating normally
+- Power flashing slowly: booting, firmware update, or WPS in progress  
+- Power flashing quickly: WPS error
+
+Reboot IS appropriate: internet down on all devices, intermittent drops on all devices, slow speeds everywhere, cables confirmed good but still no internet.
+Reboot NOT appropriate: only one device affected, ISP confirmed outage, firmware update in progress, problem is one specific website.
+
+After 2-4 exchanges, end your message with EXACTLY one tag:
+[DECISION: reboot_appropriate]
+[DECISION: reboot_not_appropriate]  
+[DECISION: need_more_info]
+
+Keep responses under 80 words. Be friendly and direct.`;
+
+const SYS_REBOOT = `You are guiding a user through a router reboot step by step.
+RULE: Present ONLY the exact step text given to you. Do not add, invent, or modify any steps.
+Present it warmly and ask them to confirm when done. Under 55 words.`;
+
+const SYS_POST = `You are checking if the router reboot resolved the user's WiFi issue. Ask if internet is working now.
+End your message with EXACTLY one tag based on their response:
+[OUTCOME: resolved]
+[OUTCOME: not_resolved]
+[OUTCOME: unclear]
+Under 45 words.`;
+
+const SYS_EXIT_OK   = `WiFi troubleshooting session resolved. Congratulate warmly, wish them well. Under 55 words.`;
+const SYS_EXIT_FAIL = `WiFi reboot did not resolve the issue. Apologize, then suggest: 1) check ISP for outages, 2) visit Linksys.com/support/EA6350, 3) factory reset only as last resort (warn it erases all settings). Under 90 words.`;
+const SYS_NO_REBOOT = `WiFi troubleshooting: reboot is NOT the solution. Briefly explain why, give targeted advice (device-specific: forget/rejoin network, restart device; ISP outage: contact ISP; single site: server issue). Under 80 words.`;
+
+/* ── Backend API calls ───────────────────────────────────────────────────── */
+async function initSession() {
+  if (SESSION_ID) return SESSION_ID;
+  const r = await fetch(`${API_BASE}/session`, { method: 'POST' });
+  if (!r.ok) throw new Error(`Failed to create session: ${r.status}`);
+  const data = await r.json();
+  SESSION_ID = data.session_id;
+  return SESSION_ID;
+}
+
+async function sendMessage(message) {
+  const sessionId = SESSION_ID || await initSession();
+  const r = await fetch(`${API_BASE}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, message })
+  });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.detail || `API error ${r.status}`);
+  }
+  return await r.json();
+}
+
+function getTag(text, name) {
+  const m = text.match(new RegExp(`\\[${name}:\\s*([^\\]]+)\\]`, 'i'));
+  return m ? m[1].trim().toLowerCase() : null;
+}
+function stripTags(text) {
+  return text.replace(/\[DECISION:[^\]]*\]/gi, '').replace(/\[OUTCOME:[^\]]*\]/gi, '').trim();
+}
+
+/* ── DOM helpers ─────────────────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const msgsEl = $('msgs');
+
+function scrollBot() { msgsEl.scrollTop = msgsEl.scrollHeight; }
+
+function addMsg(role, text, isStep = false) {
+  const row = document.createElement('div');
+  row.className = `msg ${role}`;
+  const av = document.createElement('div');
+  av.className = 'av';
+  av.innerHTML = role === 'bot'
+    ? `<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/></svg>`
+    : `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+  const bub = document.createElement('div');
+  bub.className = 'bub';
+  if (isStep && role === 'bot') {
+    const tag = document.createElement('div');
+    tag.className = 'step-tag';
+    tag.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Step ${rebootStep} of ${MANUAL[rebootMethod].steps.length}`;
+    bub.appendChild(tag);
+    const t = document.createElement('div');
+    t.style.marginTop = '4px';
+    t.textContent = text;
+    bub.appendChild(t);
+  } else {
+    bub.textContent = text;
+  }
+  row.appendChild(av); row.appendChild(bub);
+  msgsEl.appendChild(row); scrollBot();
+}
+
+function addBanner(type, text) {
+  const b = document.createElement('div');
+  b.className = `banner ${type}`;
+  b.textContent = text;
+  msgsEl.appendChild(b); scrollBot();
+}
+
+function showTyping() {
+  const row = document.createElement('div');
+  row.className = 'msg bot'; row.id = 'typ';
+  const av = document.createElement('div'); av.className = 'av';
+  av.innerHTML = `<svg viewBox="0 0 24 24" style="stroke:var(--teal)" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="var(--teal)" stroke="none"/></svg>`;
+  const bub = document.createElement('div'); bub.className = 'bub';
+  bub.innerHTML = `<div class="typing-bub"><div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div></div>`;
+  row.appendChild(av); row.appendChild(bub);
+  msgsEl.appendChild(row); scrollBot();
+}
+function hideTyping() { const t = $('typ'); if (t) t.remove(); }
+
+function setEnabled(on) {
+  $('msg').disabled = !on;
+  $('send-btn').disabled = !on;
+  if (on) { $('msg').placeholder = 'Type your reply…'; $('msg').focus(); }
+}
+
+function updateState(s) {
+  state = s;
+  const order = ['DIAGNOSIS','REBOOT_GUIDE','POST_CHECK','EXIT'];
+  const cur = order.indexOf(s);
+  document.querySelectorAll('.s-step').forEach(el => {
+    const i = order.indexOf(el.dataset.s);
+    el.classList.toggle('active', i === cur);
+    el.classList.toggle('done', i < cur);
+  });
+  $('turn-info').textContent = `Turn ${turns}`;
+}
+
+function setPill(cls, label) {
+  $('pill').className = `pill ${cls}`;
+  $('pill').textContent = label;
+}
+
+function toast(msg, cls = '') {
+  const t = $('toast');
+  t.textContent = msg; t.className = `toast ${cls} show`;
+  setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+/* ── Session ─────────────────────────────────────────────────────────────── */
+function resetSession() {
+  state = 'DIAGNOSIS'; rebootMethod = null; rebootStep = 0;
+  turns = 0; diagTurns = 0; history = [];
+  msgsEl.innerHTML = '';
+  updateState('DIAGNOSIS');
+  $('msg').placeholder = 'Describe your WiFi issue…';
+}
+
+function newSession() {
+  resetSession();
+  const open = "Hi! I'm your WiFi troubleshooting assistant for the Linksys EA6350. Let's figure out what's going on.\n\nCan you describe what's happening with your WiFi? For example: are you unable to connect, experiencing slow speeds, or is the internet dropping out?";
+  history.push({ role: 'assistant', content: open });
+  addMsg('bot', open);
+  setPill('active', 'Active');
+  setEnabled(true);
+}
+
+/* ── Send ────────────────────────────────────────────────────────────────── */
+async function send() {
+  const text = $('msg').value.trim();
+  if (!text || state === 'EXIT') return;
+  $('msg').value = ''; $('msg').style.height = 'auto';
+  setEnabled(false);
+  addMsg('user', text);
+  history.push({ role: 'user', content: text });
+  turns++; diagTurns++;
+  $('turn-info').textContent = `Turn ${turns}`;
+  showTyping();
+  try {
+    if      (state === 'DIAGNOSIS')    await doDiagnosis();
+    else if (state === 'REBOOT_GUIDE') await doRebootGuide();
+    else if (state === 'POST_CHECK')   await doPostCheck();
+  } catch (e) {
+    hideTyping();
+    toast(e.message || 'Something went wrong', 'err');
+    setEnabled(true);
+  }
+}
+
+/* ── Diagnosis ───────────────────────────────────────────────────────────── */
+async function doDiagnosis() {
+  const data = await sendMessage(history[history.length - 1].content);
+  hideTyping();
+  const reply = data.reply;
+  state = data.state;
+  turns = data.turn;
+  rebootMethod = data.reboot_method;
+  rebootStep = data.reboot_step || 0;
+  
+  history.push({ role: 'assistant', content: reply });
+  addMsg('bot', reply);
+  updateState(state);
+  
+  if (state === 'REBOOT_GUIDE') {
+    const m = MANUAL[rebootMethod];
+    addBanner('info', `Method: ${m.title}  (${m.steps.length} steps)`);
+    if (m.warning) addBanner('warn', `Warning: ${m.warning}`);
+  } else if (state === 'POST_CHECK') {
+    // Already transitioned by backend
+  } else if (state === 'EXIT') {
+    setPill(data.is_complete ? 'done' : 'err', data.is_complete ? 'Complete' : 'Unresolved');
+    setEnabled(false);
+  } else {
+    setEnabled(true);
+  }
+}
+
+/* ── Reboot guide ───────────────────────────────────────────────────────── */
+async function doRebootGuide() {
+  const data = await sendMessage(history[history.length - 1].content);
+  hideTyping();
+  const reply = data.reply;
+  state = data.state;
+  turns = data.turn;
+  rebootStep = data.reboot_step || 0;
+  
+  history.push({ role: 'assistant', content: reply });
+  addMsg('bot', reply, rebootStep > 0);
+  updateState(state);
+  
+  if (state === 'POST_CHECK') {
+    // Transitioned after all steps
+  } else if (state === 'EXIT') {
+    setPill('done', 'Complete');
+    setEnabled(false);
+  } else {
+    setEnabled(true);
+  }
+}
+
+async function startPostCheck() {
+  updateState('POST_CHECK');
+  showTyping();
+  const data = await sendMessage('Is everything working now?');
+  hideTyping();
+  const reply = data.reply;
+  history.push({ role: 'assistant', content: reply });
+  addMsg('bot', reply);
+  state = data.state;
+  updateState(state);
+  if (state === 'EXIT') {
+    setPill(data.is_complete ? 'done' : 'err', data.is_complete ? 'Complete' : 'Unresolved');
+  }
+  setEnabled(state !== 'EXIT');
+  setEnabled(true);
+}
+
+async function doRebootGuide() {
+  rebootStep++;
+  hideTyping();
+  if (rebootStep >= MANUAL[rebootMethod].steps.length) {
+    await startPostCheck();
+  } else {
+    await deliverStep();
+  }
+}
+
+/* ── Post check ──────────────────────────────────────────────────────────── */
+async function startPostCheck() {
+  updateState('POST_CHECK');
+  const raw = await claude(SYS_POST, history);
+  const reply = stripTags(raw);
+  const outcome = getTag(raw, 'OUTCOME');
+  hideTyping();
+  history.push({ role: 'assistant', content: reply });
+  addMsg('bot', reply);
+  if (outcome) await applyOutcome(outcome);
+  else setEnabled(true);
+}
+
+async function doPostCheck() {
+  const raw = await claude(SYS_POST, history);
+  const reply = stripTags(raw);
+  const outcome = getTag(raw, 'OUTCOME');
+  hideTyping();
+  history.push({ role: 'assistant', content: reply });
+  addMsg('bot', reply);
+  if (outcome) await applyOutcome(outcome);
+  else setEnabled(true);
+}
+
+async function applyOutcome(outcome) {
+  if (outcome === 'resolved') {
+    updateState('EXIT');
+    addBanner('success', 'Issue resolved — your Linksys EA6350 is back online.');
+    showTyping();
+    const bye = await claude(SYS_EXIT_OK, history);
+    hideTyping();
+    addMsg('bot', bye);
+    setPill('done', 'Resolved');
+    $('msg').placeholder = 'Session complete — click ↺ New session to start over';
+    $('msg').disabled = true; $('send-btn').disabled = true;
+  } else if (outcome === 'not_resolved') {
+    updateState('EXIT');
+    addBanner('fail', 'Reboot did not resolve the issue — further steps needed.');
+    showTyping();
+    const bye = await claude(SYS_EXIT_FAIL, history);
+    hideTyping();
+    addMsg('bot', bye);
+    setPill('err', 'Unresolved');
+    $('msg').placeholder = 'Session complete — click ↺ New session to start over';
+    $('msg').disabled = true; $('send-btn').disabled = true;
+  } else {
+    setEnabled(true);
+  }
+}
+
+async function doNoReboot() {
+  updateState('EXIT');
+  showTyping();
+  const reply = await claude(SYS_NO_REBOOT, history);
+  hideTyping();
+  addMsg('bot', reply);
+  setPill('done', 'Complete');
+  $('msg').placeholder = 'Session complete — click ↺ New session to start over';
+  $('msg').disabled = true; $('send-btn').disabled = true;
+}
+
+/* ── Session setup ───────────────────────────────────────────────────────── */
+async function startSession() {
+  try {
+    await initSession();
+    $('setup').style.display = 'none';
+    newSession();
+  } catch (e) {
+    toast(e.message || 'Failed to connect to backend', 'err');
+  }
+}
+
+/* ── Textarea auto-resize + Enter to send ────────────────────────────────── */
+const msgEl = $('msg');
+msgEl.addEventListener('input', () => {
+  msgEl.style.height = 'auto';
+  msgEl.style.height = Math.min(msgEl.scrollHeight, 120) + 'px';
+});
+msgEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+</script>
+</body>
+</html>
