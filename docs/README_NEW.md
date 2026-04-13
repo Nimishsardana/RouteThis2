@@ -20,7 +20,114 @@ python -m venv .venv
 # Activate (Windows)
 .venv\Scripts\activate
 
+<<<<<<< HEAD
 # Install dependencies
+=======
+# 3. Run
+uvicorn src.main:app --reload
+
+# 4. Open browser
+# http://localhost:8000/
+```
+
+✅ That's it! Chat interface is ready.
+
+See [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) for detailed setup instructions.
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│                  User Interface                 │
+│         CLI (cli.py) │ Web UI (ui/index.html)   │
+└─────────────────────────┬───────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────┐
+│              FastAPI Server (main.py)           │
+│         POST /chat │ POST /session │ GET /health│
+└─────────────────────────┬───────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────┐
+│            Chat Handler (flows/chat_handler.py) │
+│                 State Machine Router            │
+└──────┬──────────────────┬──────────────────┬────┘
+       │                  │                  │
+┌──────▼───────┐  ┌────────▼──────┐  ┌───────▼───────┐
+│ State Machine│  │  LLM Service  │  │Manual Service │
+│(state_machine│  │(llm_service.py│  │(manual_service│
+│    .py)      │  │)              │  │    .py)       │
+└──────────────┘  └───────┬───────┘  └───────┬───────┘
+                         │                  │
+                   Claude API        data/ea6350_
+                                     reboot_instructions
+                                          .json
+```
+
+### State Machine
+
+```
+DIAGNOSIS ──[reboot_appropriate]──► REBOOT_GUIDE ──[all steps done]──► POST_CHECK
+    │                                                                        │
+    │[reboot_not_appropriate]                            [resolved/not]      │
+    ▼                                                                        ▼
+  EXIT ◄───────────────────────────────────────────────────────────────── EXIT
+```
+
+---
+
+## Directory Structure
+
+```
+wifi-troubleshooter/
+├── main.py                          # FastAPI server
+├── cli.py                           # CLI interface
+├── run_tests.py                     # Standalone test runner (no pytest needed)
+├── requirements.txt
+├── Dockerfile
+├── .env.example
+│
+├── src/
+│   ├── flows/
+│   │   ├── state_machine.py         # State enum + ConversationState dataclass
+│   │   └── chat_handler.py          # Main orchestration logic
+│   ├── services/
+│   │   ├── llm_service.py           # Claude API calls + prompt construction
+│   │   └── manual_service.py        # PDF data loader + retrieval
+│   └── utils/
+│       └── logger.py                # Rotating file + console logging
+│
+├── data/
+│   └── ea6350_reboot_instructions.json   # Extracted from official PDF
+│
+├── ui/
+│   └── index.html                   # Single-file web chat UI
+│
+├── tests/
+│   └── test_wifi_troubleshooter.py  # pytest-compatible tests
+│
+└── logs/
+    └── app.log                      # Runtime logs (auto-created)
+```
+
+---
+
+## Setup Instructions
+
+### 1. Prerequisites
+- Python 3.11+
+- An [Anthropic API key](https://console.anthropic.com/)
+
+### 2. Clone / Set up the project
+```bash
+git clone <your-repo-url>
+cd wifi-troubleshooter
+```
+
+### 3. Install dependencies
+```bash
+>>>>>>> 931e3e834cdb74ba22e135376a0148a0adfc47e7
 pip install -r requirements.txt
 ```
 
@@ -451,8 +558,6 @@ This project is part of an interviewer evaluation task.
 **For API usage:** See [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)  
 **For deployment:** See [DEPLOYMENT.md](docs/DEPLOYMENT.md)  
 **For architecture:** See [ARCHITECTURE.md](docs/ARCHITECTURE.md)  
-**For improvements:** See [IMPROVEMENTS.md](docs/IMPROVEMENTS.md)
 
 ---
 
-**Ready to evaluate?** Start with `Quick Start` above, then check `/docs` for deep dives.

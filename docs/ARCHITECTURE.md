@@ -11,7 +11,7 @@ The WiFi Troubleshooter is an enterprise-grade FastAPI chat service that demonst
 ### Request Flow Diagram
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        HTTP Request                              │
+│                        HTTP Request                             │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
                     ┌──────▼───────┐
@@ -29,8 +29,8 @@ The WiFi Troubleshooter is an enterprise-grade FastAPI chat service that demonst
                     └──────┬──────────────┘
                            │
                     ┌──────▼────────────────┐
-                    │  RateLimiter         │
-                    │  (100 req/hour)      │
+                    │  RateLimiter          │
+                    │  (100 req/hour)       │
                     └──────┬────────────────┘
                            │
                     ┌──────▼───────────────────┐
@@ -43,7 +43,7 @@ The WiFi Troubleshooter is an enterprise-grade FastAPI chat service that demonst
                     │  (normalize whitespace) │
                     └──────┬──────────────────┘
                            │
-                    ┌──────▼──────────────────────┐
+                    ┌──────▼─────────────────────┐
                     │  chat_handler.process()    │
                     │  ├─ State machine routing  │
                     │  ├─ DiagnosticDetector     │
@@ -51,17 +51,17 @@ The WiFi Troubleshooter is an enterprise-grade FastAPI chat service that demonst
                     │      ├─ LLM API call       │
                     │      ├─ Token tracking     │
                     │      └─ Cost calculation   │
+                    └──────┬─────────────────────┘
+                           │
+                    ┌──────▼──────────────────────┐
+                    │  MetricsCollector           │
+                    │  (record outcomes)          │
                     └──────┬──────────────────────┘
                            │
                     ┌──────▼──────────────────────┐
-                    │  MetricsCollector          │
-                    │  (record outcomes)         │
-                    └──────┬──────────────────────┘
-                           │
-                    ┌──────▼──────────────────────┐
-                    │  HTTP Response             │
-                    │  (JSON)                    │
-                    └──────────────────────────────┘
+                    │  HTTP Response              │
+                    │  (JSON)                     │
+                    └─────────────────────────────┘
 ```
 
 ---

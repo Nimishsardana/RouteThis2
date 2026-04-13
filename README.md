@@ -40,25 +40,25 @@ See [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) for detailed setup instructions.
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                  User Interface                  │
-│         CLI (cli.py) │ Web UI (ui/index.html)    │
+│                  User Interface                 │
+│         CLI (cli.py) │ Web UI (ui/index.html)   │
 └─────────────────────────┬───────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────┐
-│              FastAPI Server (main.py)            │
-│         POST /chat │ POST /session │ GET /health  │
+│              FastAPI Server (main.py)           │
+│         POST /chat │ POST /session │ GET /health│
 └─────────────────────────┬───────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────┐
-│            Chat Handler (flows/chat_handler.py)  │
-│                 State Machine Router             │
+│            Chat Handler (flows/chat_handler.py) │
+│                 State Machine Router            │
 └──────┬──────────────────┬──────────────────┬────┘
        │                  │                  │
-┌──────▼──────┐  ┌────────▼──────┐  ┌───────▼──────┐
+┌──────▼───────┐  ┌────────▼──────┐  ┌───────▼───────┐
 │ State Machine│  │  LLM Service  │  │Manual Service │
 │(state_machine│  │(llm_service.py│  │(manual_service│
 │    .py)      │  │)              │  │    .py)       │
-└─────────────┘  └───────┬───────┘  └───────┬───────┘
+└──────────────┘  └───────┬───────┘  └───────┬───────┘
                          │                  │
                    Claude API        data/ea6350_
                                      reboot_instructions
