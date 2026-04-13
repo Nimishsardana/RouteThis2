@@ -21,7 +21,7 @@ pip install -r requirements.txt
 copy .env.example .env                    # Add GITHUB_TOKEN_1=your_token
 
 # 3. Run
-uvicorn main:app --reload
+uvicorn src.main:app --reload
 
 # 4. Open browser
 # http://localhost:8000/
