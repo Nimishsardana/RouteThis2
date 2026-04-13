@@ -68,18 +68,36 @@ class ChatHandler:
                 logger.error(f"[{session.session_id}] Unknown state: {session.state}")
         
         except RuntimeError as e:
-            # Handle LLM service errors gracefully
-            error_msg = str(e)
-            if "rate" in error_msg.lower():
+            # Handle LLM service errors gracefully with specific error classification
+            error_msg_lower = str(e).lower()
+            
+            # Classify error type and provide appropriate user-facing message
+            if "rate" in error_msg_lower or "quotaexceed" in error_msg_lower or "ratelimitreached" in error_msg_lower:
                 reply = (
                     "I'm currently experiencing high demand on the AI service. "
                     "Please try again in a few moments. If this persists, please start a new session."
                 )
+                logger.warning(f"[{session.session_id}] Rate limit error: {str(e)}")
+            elif "timeout" in error_msg_lower:
+                reply = (
+                    "The AI service is responding slowly right now. "
+                    "Please try again. If the issue continues, start a new session."
+                )
+                logger.warning(f"[{session.session_id}] Timeout error: {str(e)}")
+            elif "token" in error_msg_lower and "exhausted" in error_msg_lower:
+                reply = (
+                    "I'm unable to connect to the AI service at the moment. "
+                    "This is a temporary issue. Please try again in a few moments."
+                )
+                logger.error(f"[{session.session_id}] All tokens exhausted: {str(e)}")
             else:
-                reply = f"An error occurred: {error_msg}"
+                reply = (
+                    "An unexpected error occurred while processing your message. "
+                    "Please try again or start a new session."
+                )
+                logger.error(f"[{session.session_id}] Unexpected error: {str(e)}")
             
             session.transition_to(State.EXIT)
-            logger.error(f"[{session.session_id}] LLM service error: {e}")
 
         # Record assistant reply
         session.add_message("assistant", reply)
@@ -176,23 +194,52 @@ class ChatHandler:
         Fetch the current step from the manual and have LLM present it.
         The step text is always sourced from the manual — never hallucinated.
         """
+        if not session.reboot_method:
+            # Safety check: reboot method not set
+            logger.error(f"[{session.session_id}] Reboot method not set before delivering steps")
+            session.transition_to(State.EXIT)
+            return (
+                "I encountered an issue retrieving the reboot instructions. "
+                "Please start a new session and we'll try again."
+            )
+        
         step_index = session.reboot_step_index
         total_steps = manual_service.get_total_steps(session.reboot_method)
+        
+        if total_steps == 0:
+            # Manual data missing or corrupted
+            logger.error(f"[{session.session_id}] Manual data missing for method: {session.reboot_method}")
+            session.transition_to(State.EXIT)
+            return (
+                "I'm unable to retrieve the reboot instructions from the manual. "
+                "Please contact Linksys support directly at 1-800-326-7114 for assistance."
+            )
+        
         step_text = manual_service.get_reboot_step(session.reboot_method, step_index)
 
         if not step_text:
-            logger.error(f"[{session.session_id}] No step found at index {step_index}")
+            # Step index out of range (shouldn't happen if total_steps is correct)
+            logger.error(f"[{session.session_id}] No step found at index {step_index}/{total_steps} for method {session.reboot_method}")
             session.transition_to(State.POST_CHECK)
             response, outcome = llm_service.handle_post_check(session.messages, session_id=session.session_id)
             return self._apply_post_check_outcome(session, response, outcome)
 
-        step_response = llm_service.handle_reboot_step(
-            session.messages,
-            step_text=step_text,
-            step_num=step_index + 1,
-            total_steps=total_steps,
-            session_id=session.session_id,
-        )
+        try:
+            step_response = llm_service.handle_reboot_step(
+                session.messages,
+                step_text=step_text,
+                step_num=step_index + 1,
+                total_steps=total_steps,
+                session_id=session.session_id,
+            )
+        except Exception as e:
+            # LLM call failed during step delivery
+            logger.error(f"[{session.session_id}] Failed to present reboot step: {e}")
+            session.transition_to(State.EXIT)
+            return (
+                "I encountered an issue while presenting the next instruction. "
+                "Please try starting a new session."
+            )
 
         if preamble:
             return f"{preamble}\n\n{step_response}"

@@ -273,9 +273,9 @@ def call_llm(system_prompt: str, messages: list, max_tokens: int = 400, session_
             try:
                 with ThreadPoolExecutor(max_workers=1) as executor:
                     future = executor.submit(make_api_call)
-                    response = future.result(timeout=15)  # 15 second timeout
+                    response = future.result(timeout=30)  # 30 second timeout (increased from 15s)
             except FuturesTimeoutError:
-                logger.warning(f"LLM call timed out after 15s on token {config.index}, trying next token")
+                logger.warning(f"LLM call timed out after 30s on token {config.index}, trying next token")
                 if not _advance_to_next_config():
                     raise RuntimeError("All tokens exhausted or rate-limited (timeout)")
                 continue

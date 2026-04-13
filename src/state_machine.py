@@ -71,7 +71,7 @@ class ConversationState:
         
         # Record metrics
         try:
-            from docs.metrics import MetricsCollector
+            from infra.metrics import MetricsCollector
             MetricsCollector.record_state_transition(old_state.value, new_state.value)
         except ImportError:
             pass  # Metrics not available
